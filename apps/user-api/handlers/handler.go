@@ -32,7 +32,7 @@ func (h *Handler) RegisterRoutes(router *gin.Engine) {
 	users := router.Group("/v1/users")
 	{
 		users.GET("/:id", h.GetByID)
-		users.POST("")
+		users.POST("", h.Create)
 		users.PUT("/:id", h.Update)
 	}
 }

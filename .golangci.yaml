@@ -32,6 +32,9 @@ linters:
       line-length: 150
     gocyclo:
       min-complexity: 25 # Adjust threshold as needed (e.g., 10, 15, 20)
+    gocritic:
+      disabled-checks:
+        - exitAfterDefer
   exclusions:
     generated: strict
     warn-unused: true

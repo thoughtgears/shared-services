@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/thoughtgears/shared-services/pkg/middleware"
 )
@@ -31,7 +32,7 @@ type Router struct {
 //
 // Returns:
 //   - A pointer to the configured *Router instance, ready to be run.
-func NewRouter(local bool, port *string) *Router {
+func NewRouter(serviceName string, local bool, port *string) *Router {
 	var newRouter Router
 
 	if local {
@@ -49,6 +50,7 @@ func NewRouter(local bool, port *string) *Router {
 	newRouter.Engine = gin.New()
 	newRouter.Engine.Use(middleware.Logger())
 	newRouter.Engine.Use(gin.Recovery())
+	newRouter.Engine.Use(otelgin.Middleware(serviceName))
 
 	// Explicitly clear trusted proxies (important for security depending on deployment)
 	// If behind a trusted proxy (like Cloudflare), you might configure this differently.

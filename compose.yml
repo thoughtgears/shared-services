@@ -16,6 +16,8 @@ services:
         SRC_PATH: thouthtgears/shared-services
         SERVICE: user-api
     environment:
+      K_SERVICE: user-api
+      GOOGLE_PRROJECT: ${GCP_PROJECT_ID}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID}
       GCP_REGION: ${GCP_REGION}
       PORT: 8081

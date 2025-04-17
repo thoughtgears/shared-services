@@ -14,6 +14,7 @@ import (
 	"github.com/thoughtgears/shared-services/pkg/db"
 	"github.com/thoughtgears/shared-services/pkg/models"
 	"github.com/thoughtgears/shared-services/pkg/router"
+	"github.com/thoughtgears/shared-services/pkg/telemetry"
 )
 
 const collection = "users"
@@ -28,6 +29,22 @@ func init() {
 
 func main() {
 	ctx := context.Background()
+
+	otel := telemetry.NewTelemetry(cfg.ServiceName, cfg.DomainName, cfg.OtelEndpoint, cfg.OtelInsecrue)
+	cleanup := otel.InitTracer()
+	defer func() {
+		if err := cleanup(ctx); err != nil {
+			log.Fatal().Msgf("Failed to cleanup OpenTelemetry: %v", err)
+		}
+	}()
+
+	shutdown := otel.InitCounter(ctx)
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			log.Fatal().Msgf("Failed to shutdown OpenTelemetry: %v", err)
+		}
+	}()
+
 	client, err := firestore.NewClient(ctx, cfg.ProjectID)
 	if err != nil {
 		log.Fatal().Msgf("Failed to create Firestore client: %v", err)
@@ -37,7 +54,7 @@ func main() {
 	userService := services.NewUserService(datastore)
 	userHandler := handlers.NewHandler(userService)
 
-	r := router.NewRouter(cfg.Local, &cfg.Port)
+	r := router.NewRouter(cfg.ServiceName, cfg.Local, &cfg.Port)
 
 	userHandler.RegisterRoutes(r.Engine)
 

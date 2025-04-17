@@ -207,7 +207,7 @@ func (r *firestoreRepository[T]) GetByQuery(ctx context.Context, queries []Query
 // Returns:
 //   - *T: The created document data
 //   - error: Any error encountered during creation
-func (r *firestoreRepository[T]) Create(ctx context.Context, id string, data *T) (*T, error) {
+func (r *firestoreRepository[T]) Create(ctx context.Context, id string, data map[string]interface{}) (*T, error) {
 	if _, err := r.client.Collection(r.collectionName).Doc(id).Set(ctx, data); err != nil {
 		return nil, fmt.Errorf("failed to create document: %w", err)
 	}

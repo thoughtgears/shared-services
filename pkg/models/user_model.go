@@ -18,6 +18,6 @@ type Address struct {
 	BuildingNumber string `json:"building_number" firestore:"building_number"`
 	Street         string `json:"street" firestore:"street"`
 	City           string `json:"city" firestore:"city"`
-	PostCode       string `json:"zip_code" firestore:"zip_code"`
+	PostCode       string `json:"postcode" firestore:"postcode"`
 	Country        string `json:"country" firestore:"country"`
 }

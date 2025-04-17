@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
@@ -67,10 +66,25 @@ func (u *userService) Create(ctx context.Context, user *models.User) (*models.Us
 	}
 
 	user.ID = uuid.NewString()
-	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
+	userData := map[string]interface{}{
+		"id":          user.ID,
+		"first_name":  user.FirstName,
+		"last_name":   user.LastName,
+		"email":       user.Email,
+		"phone":       user.Phone,
+		"firebase_id": user.FirebaseID,
+		"address": map[string]interface{}{
+			"building_number": user.Address.BuildingNumber,
+			"street":          user.Address.Street,
+			"city":            user.Address.City,
+			"postcode":        user.Address.PostCode,
+			"country":         user.Address.Country,
+		},
+		"created_at": firestore.ServerTimestamp,
+		"updated_at": firestore.ServerTimestamp,
+	}
 
-	createdUser, err := u.datastore.Create(ctx, user.ID, user)
+	createdUser, err := u.datastore.Create(ctx, user.ID, userData)
 	if err != nil {
 		return nil, fmt.Errorf("error creating user: %w", err)
 	}
