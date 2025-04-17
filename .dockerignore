@@ -1,0 +1,6 @@
+.env
+.golangci.yaml
+.hadolint.yaml
+.terraform-version
+Makefile
+spec
