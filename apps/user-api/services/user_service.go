@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
+	"cloud.google.com/go/firestore"
+	"github.com/google/uuid"
 	"github.com/thoughtgears/shared-services/pkg/db"
 	"github.com/thoughtgears/shared-services/pkg/models"
 )
@@ -14,6 +17,7 @@ import (
 // It extends the UserService interface to include user-specific functionalities.
 type UserService interface {
 	GetByID(ctx context.Context, id string) (*models.User, error)
+	Create(ctx context.Context, user *models.User) (*models.User, error)
 	Update(ctx context.Context, id string, talent *models.User) (*models.User, error)
 }
 
@@ -53,6 +57,27 @@ func (u *userService) GetByID(ctx context.Context, id string) (*models.User, err
 	return talent, nil
 }
 
+// Create handles the creation of a new user.
+// It returns the created user object and an error if any occurs.
+// This method is used to register a new user in the system.
+// It is typically called when a new user is signing up.
+func (u *userService) Create(ctx context.Context, user *models.User) (*models.User, error) {
+	if user == nil {
+		return nil, fmt.Errorf("user cannot be nil")
+	}
+
+	user.ID = uuid.NewString()
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
+
+	createdUser, err := u.datastore.Create(ctx, user.ID, user)
+	if err != nil {
+		return nil, fmt.Errorf("error creating user: %w", err)
+	}
+
+	return createdUser, nil
+}
+
 // Update modifies an existing talent's profile.
 // It returns the updated talent object and an error if any occurs.
 // This method is used to update a talent's profile information.
@@ -67,6 +92,8 @@ func (u *userService) Update(ctx context.Context, id string, user *models.User) 
 	if len(updates) == 0 {
 		return currentUserData, nil
 	}
+
+	updates["updated_at"] = firestore.ServerTimestamp
 
 	updatedUser, err := u.datastore.Update(ctx, id, updates)
 	if err != nil {
@@ -109,6 +136,7 @@ func buildUpdateMapFromUser(user *models.User) map[string]interface{} {
 		if field.Kind() == reflect.Struct {
 			// Skip Time fields or other special structs
 			if fieldType.Type.String() == "time.Time" {
+
 				continue
 			}
 
@@ -116,16 +144,19 @@ func buildUpdateMapFromUser(user *models.User) map[string]interface{} {
 			if len(nestedUpdates) > 0 {
 				updates[tagName] = nestedUpdates
 			}
+
 			continue
 		}
 
 		// Skip empty string values
 		if field.Kind() == reflect.String && field.String() == "" {
+
 			continue
 		}
 
 		// Skip zero values for other types
 		if isZeroValue(field) {
+
 			continue
 		}
 
@@ -191,5 +222,6 @@ func isZeroValue(v reflect.Value) bool {
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
 	}
+
 	return false
 }

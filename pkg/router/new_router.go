@@ -7,7 +7,7 @@ import (
 )
 
 type Router struct {
-	engine *gin.Engine
+	Engine *gin.Engine
 	host   string
 	port   string
 }
@@ -46,9 +46,9 @@ func NewRouter(local bool, port *string) *Router {
 		newRouter.port = *port
 	}
 
-	newRouter.engine = gin.New()
-	newRouter.engine.Use(middleware.Logger())
-	newRouter.engine.Use(gin.Recovery())
+	newRouter.Engine = gin.New()
+	newRouter.Engine.Use(middleware.Logger())
+	newRouter.Engine.Use(gin.Recovery())
 
 	// Explicitly clear trusted proxies (important for security depending on deployment)
 	// If behind a trusted proxy (like Cloudflare), you might configure this differently.
@@ -59,7 +59,7 @@ func NewRouter(local bool, port *string) *Router {
 	//     log.Fatalf("Failed to set trusted proxies: %v", err)
 	// }
 	// For now, clearing them might be fine depending on your setup.
-	_ = newRouter.engine.SetTrustedProxies(nil)
+	_ = newRouter.Engine.SetTrustedProxies(nil)
 
 	return &newRouter
 }

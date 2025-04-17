@@ -8,7 +8,7 @@ import (
 func (r *Router) Run() error {
 	addr := fmt.Sprintf("%s:%s", r.host, r.port)
 
-	if err := r.engine.Run(addr); err != nil {
+	if err := r.Engine.Run(addr); err != nil {
 		return fmt.Errorf("run router: %w", err)
 	}
 

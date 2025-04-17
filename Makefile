@@ -4,20 +4,19 @@ ifneq (,$(wildcard .env))
 endif
 
 GIT_SHA := $(shell git rev-parse --short HEAD)
-GIT_REPO := $(shell basename -s .git `git config --get remote.origin.url` | sed 's/.*://g')
+GIT_REPO := $(shell git remote get-url origin 2>/dev/null | sed 's/.*[/:]//;s/\.git$$//' || echo "local")
 SERVICES := user-api
 
 .PHONY: dev emulator lint test cover build push deploy
 
 dev:
-	ifndef SERVICE
-		@echo "Usage: make dev SERVICE=<service-name>"
-		@echo "Example: make dev SERVICE=user-api"
-		@exit 1
-	endif
-		@go mod tidy
-		@go run cmd/$(SERVICE)/main.go
-
+ifndef SERVICE
+	@echo "Usage: make dev SERVICE=<service-name>"
+	@echo "Example: make dev SERVICE=user-api"
+	@exit 1
+endif
+	@go mod tidy
+	@go run cmd/$(SERVICE)/main.go
 
 lint:
 	@golangci-lint run --timeout 5m
@@ -26,15 +25,19 @@ lint:
 test:
 	@go test -v ./...
 
+
 build: lint
+	@echo "Building all services..."
 	@for service in $(SERVICES) ; do \
-		@docker build --platform linux/amd64 --build-arg SRC_PATH=$(GIT_REPO) -t $(DOCKER_REPO)/$$service .
-		@docker tag $(DOCKER_REPO)/$$service:latest $(DOCKER_REPO)/$$service:$(GIT_SHA)
+		docker build --platform linux/amd64 --build-arg SRC_PATH=$(GIT_REPO) --build-arg SERVICE=$$service -t $(DOCKER_REPO)/$$service . && \
+		docker tag $(DOCKER_REPO)/$$service:latest $(DOCKER_REPO)/$$service:$(GIT_SHA) ; \
 	done
 
 push:
-	@docker push $(DOCKER_REPO)/$(SERVICE_NAME):latest
-	@docker push $(DOCKER_REPO)/$(SERVICE_NAME):$(GIT_SHA)
+	@for service in $(SERVICES) ; do \
+		docker push $(DOCKER_REPO)/$$service:latest && \
+		docker push $(DOCKER_REPO)/$$service:$(GIT_SHA) ; \
+	done
 
 deploy:
 	@gcloud run deploy $(SERVICE_NAME) \

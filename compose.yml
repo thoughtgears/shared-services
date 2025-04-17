@@ -1,0 +1,24 @@
+services:
+  api-gateway:
+    image: envoyproxy/envoy:v1.25.0
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    depends_on:
+      - user-api
+
+  user-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SRC_PATH: thouthtgears/shared-services
+        SERVICE: user-api
+    environment:
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_REGION: ${GCP_REGION}
+      PORT: 8081
+      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/application_default_credentials.json
+    volumes:
+      - ~/.config/gcloud:/root/.config/gcloud
