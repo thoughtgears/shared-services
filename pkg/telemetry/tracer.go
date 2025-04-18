@@ -10,19 +10,13 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"google.golang.org/grpc/credentials"
 )
 
 func (o *Otel) InitTracer() func(context.Context) error {
-	secureOption := otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
-	if o.Insecure {
-		secureOption = otlptracegrpc.WithInsecure()
-	}
-
 	exporter, err := otlptrace.New(
 		context.Background(),
 		otlptracegrpc.NewClient(
-			secureOption,
+			otlptracegrpc.WithInsecure(),
 			otlptracegrpc.WithEndpoint(o.CollectorURL),
 		),
 	)

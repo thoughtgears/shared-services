@@ -4,14 +4,16 @@ import (
 	"context"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/storage"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/thoughtgears/shared-services/apps/user-api/config"
-	"github.com/thoughtgears/shared-services/apps/user-api/handlers"
-	"github.com/thoughtgears/shared-services/apps/user-api/services"
+	"github.com/thoughtgears/shared-services/apps/document-api/config"
+	"github.com/thoughtgears/shared-services/apps/document-api/handlers"
+	"github.com/thoughtgears/shared-services/apps/document-api/services"
 	"github.com/thoughtgears/shared-services/pkg/db"
+	"github.com/thoughtgears/shared-services/pkg/gcs"
 	"github.com/thoughtgears/shared-services/pkg/models"
 	"github.com/thoughtgears/shared-services/pkg/router"
 	"github.com/thoughtgears/shared-services/pkg/telemetry"
@@ -43,18 +45,27 @@ func main() {
 		}
 	}()
 
-	client, err := firestore.NewClient(ctx, cfg.ProjectID)
+	firestoreClient, err := firestore.NewClient(ctx, cfg.ProjectID)
 	if err != nil {
 		log.Fatal().Msgf("Failed to create Firestore client: %v", err)
 	}
 
-	datastore := db.NewFirestoreRepository[models.User](client, cfg.FirstoreCollection)
-	userService := services.NewUserService(datastore)
-	userHandler := handlers.NewHandler(userService)
+	storageClient, err := storage.NewClient(ctx)
+	if err != nil {
+		log.Fatal().Msgf("Failed to create GCS client: %v", err)
+	}
+
+	datastore := db.NewFirestoreRepository[models.Document](firestoreClient, cfg.FirestoreCollection)
+	storagestore, err := gcs.NewGCSStorage(storageClient, cfg.BucketName)
+	if err != nil {
+		log.Fatal().Msgf("Failed to create GCS storage client: %v", err)
+	}
+	documentService := services.NewDocumentService(storagestore, datastore)
+	documentHandler := handlers.NewHandler(documentService)
 
 	r := router.NewRouter(cfg.ServiceName, cfg.Local, &cfg.Port)
 
-	userHandler.RegisterRoutes(r.Engine)
+	documentHandler.RegisterRoutes(r.Engine)
 
 	log.Fatal().Err(r.Run()).Msg("Failed to run server")
 }

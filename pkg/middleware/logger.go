@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,9 +36,9 @@ func Logger() gin.HandlerFunc {
 //  4. Gathers request details: Client IP, Method, Path (including query), Status Code, Body Size.
 //  5. Extracts any errors added to the Gin context (`c.Errors`).
 //  6. Determines the log level based on the response Status Code:
-//     - >= 500: Error level
-//     - >= 400: Warning level
-//     - < 400: Info level
+//     - >= http.StatusInternalServerError: Error level
+//     - >= http.StatusBadRequest: Warning level
+//     - < http.StatusBadRequest: Info level
 //  7. Logs a single structured JSON message including all gathered details using the provided logger instance.
 //     The primary message of the log entry contains Gin's formatted private errors, if any.
 //
@@ -85,11 +86,11 @@ func StructuredLogger(logger *zerolog.Logger) gin.HandlerFunc {
 		var logEvent *zerolog.Event
 
 		switch {
-		case status >= 500: // Server errors (5xx)
+		case status >= http.StatusInternalServerError: // Server errors (5xx)
 			logEvent = logger.Error()
-		case status >= 400: // Client errors (4xx) - This case is only reached if status < 500
+		case status >= http.StatusBadRequest: // Client errors (4xx) - This case is only reached if status < http.StatusInternalServerError
 			logEvent = logger.Warn()
-		default: // Success, redirects, informational etc. (< 400)
+		default: // Success, redirects, informational etc. (< http.StatusBadRequest)
 			logEvent = logger.Info()
 		}
 

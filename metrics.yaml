@@ -6,10 +6,6 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-  filelog:
-    include: [/logging/*.log]
-    start_at: beginning
-
 processors:
   batch:
     # batch metrics before sending to reduce API usage
@@ -41,10 +37,9 @@ processors:
       action: insert
 
 exporters:
-  googlemanagedprometheus:
-   googlecloud:
-    log:
-      default_log_name: ${env:K_SERVICE}
+  googlemanagedprometheus: # 
+  googlecloud: # 
+
 
 extensions:
   health_check:
@@ -53,6 +48,10 @@ service:
   extensions: [health_check]
   pipelines:
     metrics:
-      receivers: [filelog, otlp]
+      receivers: [otlp]
       processors: [batch, memory_limiter, resourcedetection, resource]
-      exporters: [googlemanagedprometheus. googlecloud]
+      exporters: [googlemanagedprometheus, googlecloud]
+    traces:  # Add this pipeline
+      receivers: [otlp]
+      processors: [batch, memory_limiter, resourcedetection, resource]
+      exporters: [googlecloud]

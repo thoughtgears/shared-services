@@ -4,14 +4,12 @@ type Otel struct {
 	ServiceName  string
 	DomainName   string
 	CollectorURL string
-	Insecure     bool
 }
 
-func NewTelemetry(serviceName, domainName, collectorURL string, insecure bool) *Otel {
+func NewTelemetry(serviceName, domainName, collectorURL string) *Otel {
 	return &Otel{
 		ServiceName:  serviceName,
 		DomainName:   domainName,
 		CollectorURL: collectorURL,
-		Insecure:     insecure,
 	}
 }
