@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -24,9 +25,15 @@ func (o *Otel) InitTracer(ctx context.Context) func(context.Context) error {
 		log.Printf("Could not set resources: %v", err)
 	}
 
-	exporter, err := otlptracegrpc.New(ctx)
+	exporter, err := otlptrace.New(
+		ctx,
+		otlptracegrpc.NewClient(
+			otlptracegrpc.WithInsecure(),
+			otlptracegrpc.WithEndpoint(o.Endpoint),
+		),
+	)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to create trace exporter: %v", err)
 	}
 
 	otel.SetTracerProvider(

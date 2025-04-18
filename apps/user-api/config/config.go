@@ -8,4 +8,5 @@ type Config struct {
 	FirstoreCollection string `envconfig:"FIRESTORE_COLLECTION" default:"users"`
 	ServiceName        string `envconfig:"K_SERVICE" default:"user-api"`
 	DomainName         string `envconfig:"DOMAIN_NAME" default:"thoughtgears.co.uk"`
+	OTELEndpoint       string `envconfig:"OTEL_ENDPOINT" default:"localhost:4317"`
 }

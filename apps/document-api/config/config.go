@@ -9,4 +9,5 @@ type Config struct {
 	FirestoreCollection string `envconfig:"FIRESTORE_COLLECTION" default:"documents"`
 	ServiceName         string `envconfig:"K_SERVICE" default:"document-api"`
 	DomainName          string `envconfig:"DOMAIN_NAME" default:"thoughtgears.co.uk"`
+	OTELEndpoint        string `envconfig:"OTEL_ENDPOINT" default:"localhost:4317"`
 }

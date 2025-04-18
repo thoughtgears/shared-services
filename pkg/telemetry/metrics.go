@@ -28,6 +28,7 @@ func (o *Otel) InitCounter(ctx context.Context) func(context.Context) error {
 
 	exporter, err := otlpmetricgrpc.New(ctx,
 		otlpmetricgrpc.WithInsecure(),
+		otlpmetricgrpc.WithEndpoint(o.Endpoint),
 	)
 	if err != nil {
 		log.Fatalf("Error creating exporter: %s", err)

@@ -1,7 +1,7 @@
 // src/pages/Login.tsx
 import React, {ChangeEvent, FormEvent, useState} from 'react';
 import {signInWithEmailAndPassword} from 'firebase/auth';
-import {auth} from '../firebase';
+import {auth} from '../lib/firebase';
 import {useNavigate} from 'react-router-dom';
 
 const Login: React.FC = () => {

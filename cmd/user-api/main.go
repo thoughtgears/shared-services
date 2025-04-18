@@ -28,7 +28,7 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	otel := telemetry.NewTelemetry(cfg.ServiceName, cfg.DomainName)
+	otel := telemetry.NewTelemetry(cfg.ServiceName, cfg.DomainName, cfg.OTELEndpoint)
 	cleanup := otel.InitTracer(ctx)
 	defer func() {
 		if err := cleanup(ctx); err != nil {

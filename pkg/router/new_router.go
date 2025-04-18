@@ -1,6 +1,8 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
@@ -51,6 +53,21 @@ func NewRouter(serviceName string, local bool, port *string) *Router {
 	newRouter.Engine.Use(middleware.Logger())
 	newRouter.Engine.Use(gin.Recovery())
 	newRouter.Engine.Use(otelgin.Middleware(serviceName))
+
+	newRouter.Engine.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "authorization,content-type,x-requested-with,origin,accept")
+		c.Header("Access-Control-Max-Age", "86400")
+
+		// Handle OPTIONS request and return 200
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusOK)
+			return
+		}
+
+		c.Next()
+	})
 
 	// Explicitly clear trusted proxies (important for security depending on deployment)
 	// If behind a trusted proxy (like Cloudflare), you might configure this differently.

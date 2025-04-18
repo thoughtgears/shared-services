@@ -48,12 +48,23 @@ func NewUserService(datastore db.DB[models.User]) UserService {
 // This method is used to fetch user details.
 // It is typically called when a user needs to be displayed.
 func (u *userService) GetByID(ctx context.Context, id string) (*models.User, error) {
-	talent, err := u.datastore.GetByID(ctx, id)
+	query := []db.QueryConstraint{
+		{
+			Path:  "firebase_id",
+			Op:    "==",
+			Value: id,
+		},
+	}
+	user, _, err := u.datastore.GetByQuery(ctx, query, "", 1)
 	if err != nil {
 		return nil, fmt.Errorf("error getting talent by ID: %w", err)
 	}
 
-	return talent, nil
+	if len(user) == 0 {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return user[0], nil
 }
 
 // Create handles the creation of a new user.
