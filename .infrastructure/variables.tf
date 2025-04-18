@@ -19,3 +19,9 @@ variable "git_sha" {
   description = "Git SHA of the commit to deploy"
   default     = "latest"
 }
+
+variable "digest" {
+  type        = string
+  description = "Docker digest of the image to deploy"
+  default     = "latest"
+}

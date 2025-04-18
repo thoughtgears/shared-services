@@ -1,6 +1,8 @@
 locals {
-  service_name      = "portal-api"
-  otel_docker_image = "europe-west1-docker.pkg.dev/shared-services-47252/utils/otel:latest"
+  service_name            = "portal-api"
+  otel_docker_image       = "${var.region}-docker.pkg.dev/${var.project_id}/utils/otel:latest"
+  portal_api_docker_image = var.digest == "latest" ? "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}:latest" : "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}@${var.digest}"
+
   service_apis = [
     "apigateway.googleapis.com",
     "servicemanagement.googleapis.com",
@@ -83,7 +85,7 @@ resource "google_cloud_run_v2_service" "this" {
     }
 
     containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}:latest"
+      image = local.portal_api_docker_image
 
       ports {
         container_port = 8080
@@ -251,8 +253,6 @@ resource "google_api_gateway_api_config" "api_config" {
   project              = var.project_id
   api                  = google_api_gateway_api.portal_api.api_id
   api_config_id_prefix = "portal-api-config-" # Creates unique IDs like my-gateway-config-a1b2
-
-  display_name = "Config - ${var.git_sha} " # Example: Config with timestamp
 
   openapi_documents {
     document {

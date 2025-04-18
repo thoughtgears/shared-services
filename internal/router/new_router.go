@@ -81,5 +81,13 @@ func NewRouter(serviceName string, local bool, port *string) *Router {
 	// For now, clearing them might be fine depending on your setup.
 	_ = newRouter.Engine.SetTrustedProxies(nil)
 
+	// Need health check for uptime monitoring
+	newRouter.Engine.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "Service is running",
+		})
+	})
+
 	return &newRouter
 }
