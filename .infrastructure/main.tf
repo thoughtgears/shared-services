@@ -1,27 +1,6 @@
 locals {
-  services = {
-    "user-api" = {
-      name        = "user-api"
-      description = "User API"
-    }
-    "document-api" = {
-      name        = "document-api"
-      description = "Document API"
-    }
-  }
-
+  service_name      = "portal-api"
   otel_docker_image = "europe-west1-docker.pkg.dev/shared-services-47252/utils/otel:latest"
-
-  service_account_list = [
-    for key, service in local.services :
-    "serviceAccount:run-${service.name}@${var.project_id}.iam.gserviceaccount.com"
-  ]
-
-  service_account_email_map = {
-    for key, service in local.services :
-    service.name => "run-${service.name}@${var.project_id}.iam.gserviceaccount.com"
-  }
-
   service_apis = [
     "apigateway.googleapis.com",
     "servicemanagement.googleapis.com",
@@ -34,9 +13,8 @@ locals {
 locals {
   api_gateway_runtime_sa = "service-${var.project_number}@gcp-sa-apigateway.iam.gserviceaccount.com"
   openapi_spec_rendered = templatefile("${path.module}/templates/openapi.yaml.tftpl", {
-    project_id         = var.project_id
-    cloud_run_user_url = google_cloud_run_v2_service.this["user-api"].uri
-    cloud_run_doc_url  = google_cloud_run_v2_service.this["document-api"].uri
+    project_id    = var.project_id
+    cloud_run_url = google_cloud_run_v2_service.this.uri
   })
 
   openapi_spec_base64 = base64encode(local.openapi_spec_rendered)
@@ -81,25 +59,21 @@ resource "google_project_iam_custom_role" "thoughtgears_firebase_service_access"
 }
 
 resource "google_service_account" "run" {
-  for_each = local.services
-
   project      = var.project_id
-  account_id   = "run-${each.value.name}"
-  display_name = "[RUN] ${each.value.name}"
-  description  = "Service account for cloud run instance for ${each.value.description}"
+  account_id   = "run-${local.service_name}"
+  display_name = "[RUN] ${local.service_name}"
+  description  = "Service account for cloud run instance for ${local.service_name}"
 }
 
 resource "google_cloud_run_v2_service" "this" {
-  for_each = local.services
-
-  name                = each.value.name
+  name                = local.service_name
   project             = var.project_id
   location            = var.region
   deletion_protection = false
   ingress             = "INGRESS_TRAFFIC_ALL"
 
   template {
-    service_account                  = google_service_account.run[each.key].email
+    service_account                  = google_service_account.run.email
     timeout                          = "60s"
     max_instance_request_concurrency = 500
 
@@ -109,7 +83,7 @@ resource "google_cloud_run_v2_service" "this" {
     }
 
     containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/apis/${each.key}:latest"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}:latest"
 
       ports {
         container_port = 8080
@@ -119,15 +93,6 @@ resource "google_cloud_run_v2_service" "this" {
         limits = {
           cpu    = "1"
           memory = "512Mi"
-        }
-      }
-
-      dynamic "env" {
-        for_each = var.service_env_vars[each.value.name].env_vars
-
-        content {
-          name  = env.key
-          value = env.value
         }
       }
 
@@ -152,8 +117,18 @@ resource "google_cloud_run_v2_service" "this" {
       }
 
       env {
+        name  = "LOCAL"
+        value = false
+      }
+
+      env {
         name  = "OTEL_ENDPOINT"
         value = "localhost:4317"
+      }
+
+      env {
+        name  = "GIN_MODE"
+        value = "release"
       }
     }
 
@@ -178,44 +153,44 @@ resource "google_cloud_run_v2_service" "this" {
  */
 resource "google_project_iam_binding" "run_firebase_access" {
   project = var.project_id
-  members = local.service_account_list
+  members = ["serviceAccount:${google_service_account.run.email}"]
   role    = google_project_iam_custom_role.thoughtgears_firebase_service_access.name
 }
 
 resource "google_storage_bucket_iam_binding" "run_object_admin" {
   bucket  = google_storage_bucket.run_documents.name
-  members = local.service_account_list
+  members = ["serviceAccount:${google_service_account.run.email}"]
   role    = "roles/storage.objectAdmin"
 }
 
 resource "google_project_iam_member" "run_service_account_user" {
-  for_each = toset(local.service_account_list)
-
   project = var.project_id
-  member  = each.value
+  member  = "serviceAccount:${google_service_account.run.email}"
   role    = "roles/iam.serviceAccountUser"
 }
 
 resource "google_project_iam_member" "run_service_usage_consumer" {
-  for_each = toset(local.service_account_list)
-
   project = var.project_id
-  member  = each.value
+  member  = "serviceAccount:${google_service_account.run.email}"
   role    = "roles/serviceusage.serviceUsageConsumer"
 }
 
 resource "google_project_iam_member" "run_metrics_writer" {
-  for_each = toset(local.service_account_list)
-
   project = var.project_id
-  member  = each.value
+  member  = "serviceAccount:${google_service_account.run.email}"
   role    = "roles/monitoring.metricWriter"
+}
+
+resource "google_project_iam_member" "run_artifact_registry_reader" {
+  project = var.project_id
+  member  = "serviceAccount:${google_service_account.run.email}"
+  role    = "roles/artifactregistry.reader"
 }
 
 resource "google_cloud_run_v2_service_iam_member" "user_api_invoker" {
   project  = var.project_id
   location = var.region
-  name     = google_cloud_run_v2_service.this["user-api"].name
+  name     = google_cloud_run_v2_service.this.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${local.api_gateway_runtime_sa}"
 }
@@ -224,7 +199,7 @@ resource "google_cloud_run_v2_service_iam_member" "user_api_invoker" {
 resource "google_cloud_run_v2_service_iam_member" "document_api_invoker" {
   project  = var.project_id
   location = var.region
-  name     = google_cloud_run_v2_service.this["document-api"].name
+  name     = google_cloud_run_v2_service.this.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${local.api_gateway_runtime_sa}"
 }
@@ -286,8 +261,8 @@ resource "google_api_gateway_api_config" "api_config" {
     google_project_service.this["apigateway.googleapis.com"],
     google_project_service.this["servicemanagement.googleapis.com"],
     google_project_service.this["servicecontrol.googleapis.com"],
-    google_cloud_run_v2_service.this["user-api"],
-    google_cloud_run_v2_service.this["document-api"],
+    google_cloud_run_v2_service.this,
+    google_cloud_run_v2_service.this,
   ]
 }
 
@@ -295,10 +270,10 @@ resource "google_api_gateway_gateway" "gateway" {
   provider   = google-beta
   project    = var.project_id
   region     = var.region
-  gateway_id = "portal-api"
+  gateway_id = local.service_name
 
   api_config   = google_api_gateway_api_config.api_config.id
-  display_name = "Portal API Gateway Instance"
+  display_name = "${title(local.service_name)} Gateway Instance"
 
   depends_on = [
     google_api_gateway_api_config.api_config

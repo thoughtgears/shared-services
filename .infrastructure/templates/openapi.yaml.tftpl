@@ -11,16 +11,40 @@ consumes:
   - application/json
 
 securityDefinitions:
-  firebase_auth:
-    type: apiKey
-    name: Authorization
-    in: header
+  firebase:
+    authorizationUrl: ""
+    flow: "implicit"
+    type: "oauth2"
+    # Replace YOUR-PROJECT-ID with your project ID
     x-google-issuer: "https://securetoken.google.com/${project_id}"
-    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-    x-google-audiences: "${project_id}"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    x-google-audiences: ${project_id}
 
 paths:
   /v1/users:
+    get:
+      summary: Retrieve a user by ID
+      tags:
+        - User API
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_url}
+      responses:
+        '200':
+          description: User retrieved successfully
+          schema:
+            $ref: '#/definitions/UserResponse'
+        '500':
+          description: Failed to retrieve user
+          schema:
+            $ref: '#/definitions/Error'
     post:
       summary: Create a new user
       tags:
@@ -35,7 +59,7 @@ paths:
       security:
         - firebase_auth: []
       x-google-backend:
-        address: ${cloud_run_user_url}
+        address: ${cloud_run_url}
       responses:
         '201':
           description: User created successfully
@@ -45,8 +69,61 @@ paths:
           description: Bad request
           schema:
             $ref: '#/definitions/Error'
+    put:
+      summary: Update an existing user
+      tags:
+        - User API
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: userPayload
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_url}
+      responses:
+        '200':
+          description: User updated successfully
+          schema:
+            $ref: '#/definitions/UserResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/Error'
 
   /v1/documents:
+    get:
+      summary: Retrieve all documents by user ID
+      tags:
+        - Document API
+      operationId: getAllDocumentsByUserId
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          type: string
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_url}
+      responses:
+        '200':
+          description: Documents retrieved successfully
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/DocumentResponse'
+        '500':
+          description: Failed to retrieve documents
+          schema:
+            $ref: '#/definitions/Error'
     post:
       summary: Upload a new document
       tags:
@@ -66,12 +143,11 @@ paths:
         - name: file
           in: formData
           required: true
-          type: file
+          type: string
       security:
         - firebase_auth: []
       x-google-backend:
-        address: ${cloud_run_doc_url}
-        deadline: 60
+        address: ${cloud_run_url}
       responses:
         '202':
           description: Document created successfully
@@ -79,6 +155,54 @@ paths:
             $ref: '#/definitions/DocumentResponse'
         '400':
           description: Bad request
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      summary: Update an existing document
+      tags:
+        - Document API
+      operationId: updateDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: string
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_url}
+      responses:
+        '200':
+          description: Document updated successfully
+          schema:
+            $ref: '#/definitions/DocumentResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Delete a document by ID
+      tags:
+        - Document API
+      operationId: deleteDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_url}
+      responses:
+        '200':
+          description: Document deleted successfully
+        '500':
+          description: Failed to delete document
           schema:
             $ref: '#/definitions/Error'
 

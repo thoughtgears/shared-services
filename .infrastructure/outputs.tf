@@ -1,5 +1,5 @@
-output "service_account_emails" {
-  value       = local.service_account_email_map
+output "service_account_email" {
+  value       = google_service_account.run.email
   description = "A map of service account emails for the services, where the key is the service name and the value is the service account email."
 }
 

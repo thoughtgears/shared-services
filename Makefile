@@ -32,7 +32,7 @@ push:
 
 deploy:
 	@envsubst < service.yaml.tmpl > service.yaml
-	@gcloud run services replace service.yaml --project=$(GCP_PROEJCT_ID) --region=$(GCP_REGION) --quiet
+	@gcloud run services replace service.yaml --project=$(GCP_PROJECT_ID) --region=$(GCP_REGION) --quiet
 
 
 deploy-without-sidecar:
