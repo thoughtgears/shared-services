@@ -142,6 +142,7 @@ func (d *documentService) Update(ctx context.Context, id string, content []byte)
 		"size":         fileInfo.Size,
 		"content_type": fileExtension.MimeType,
 		"path":         path,
+		"updated_at":   firestore.ServerTimestamp,
 	}
 
 	updatedDocument, err := d.db.Update(ctx, id, document)
