@@ -11,12 +11,37 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type QueryOperator string
+
+const (
+	// QueryOperatorEqual represents the equality operator in Firestore queries.
+	QueryOperatorEqual QueryOperator = "=="
+	// QueryOperatorLessThan represents the less than operator in Firestore queries.
+	QueryOperatorLessThan QueryOperator = "<"
+	// QueryOperatorGreaterThan represents the greater than operator in Firestore queries.
+	QueryOperatorGreaterThan QueryOperator = ">"
+	// QueryOperatorLessThanOrEqual represents the less than or equal operator in Firestore queries.
+	QueryOperatorLessThanOrEqual QueryOperator = "<="
+	// QueryOperatorGreaterThanOrEqual represents the greater than or equal operator in Firestore queries.
+	QueryOperatorGreaterThanOrEqual QueryOperator = ">="
+	// QueryOperatorIn represents the "in" operator in Firestore queries.
+	QueryOperatorIn QueryOperator = "in"
+	// QueryOperatorArrayContains represents the "array-contains" operator in Firestore queries.
+	QueryOperatorArrayContains QueryOperator = "array-contains"
+	// QueryOperatorArrayContainsAny represents the "array-contains-any" operator in Firestore queries.
+	QueryOperatorArrayContainsAny QueryOperator = "array-contains-any"
+	// QueryOperatorNotEqual represents the not equal operator in Firestore queries.
+	QueryOperatorNotEqual QueryOperator = "!="
+	// QueryOperatorNotIn represents the "not-in" operator in Firestore queries.
+	QueryOperatorNotIn QueryOperator = "not-in"
+)
+
 // QueryConstraint represents a Firestore query condition used to filter documents.
 // It maps directly to Firestore's Where() method parameters.
 type QueryConstraint struct {
-	Path  string      // Field path (e.g., "stripeCustomerId")
-	Op    string      // Operator (e.g., "==", "<", ">=", "in", "array-contains")
-	Value interface{} // Value to compare against
+	Path  string        // Field path (e.g., "stripeCustomerId")
+	Op    QueryOperator // Operator (e.g., "==", "<", ">=", "in", "array-contains")
+	Value interface{}   // Value to compare against
 }
 
 // firestoreRepository implements Repository interface for Firestore database.
@@ -141,7 +166,7 @@ func (r *firestoreRepository[T]) GetByID(ctx context.Context, id string) (*T, er
 func (r *firestoreRepository[T]) GetByQuery(ctx context.Context, queries []QueryConstraint, pageToken string, pageSize int) ([]*T, string, error) {
 	fsQuery := r.client.Collection(r.collectionName).Query
 	for _, q := range queries {
-		fsQuery = fsQuery.Where(q.Path, q.Op, q.Value)
+		fsQuery = fsQuery.Where(q.Path, string(q.Op), q.Value)
 	}
 
 	// Add ordering for consistent pagination if not already specified in queries

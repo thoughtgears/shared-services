@@ -5,18 +5,12 @@ endif
 
 GIT_SHA := $(shell git rev-parse --short HEAD)
 GIT_REPO := $(shell git remote get-url origin 2>/dev/null | sed 's/.*[/:]//;s/\.git$$//' || echo "local")
-SERVICES := user-api
 
-.PHONY: dev emulator lint test cover build push deploy
+.PHONY: dev emulator lint test build push deploy deploy-without-sidecar infrastructure-apply infrastructure-plan
 
 dev:
-ifndef SERVICE
-	@echo "Usage: make dev SERVICE=<service-name>"
-	@echo "Example: make dev SERVICE=user-api"
-	@exit 1
-endif
 	@go mod tidy
-	@go run cmd/$(SERVICE)/main.go
+	@go run main.go
 
 lint:
 	@golangci-lint run --timeout 5m
@@ -27,26 +21,38 @@ test:
 
 
 build: lint
-	@echo "Building all services..."
-	@for service in $(SERVICES) ; do \
-		docker build --platform linux/amd64 --build-arg SRC_PATH=$(GIT_REPO) --build-arg SERVICE=$$service -t $(DOCKER_REPO)/$$service . && \
-		docker tag $(DOCKER_REPO)/$$service:latest $(DOCKER_REPO)/$$service:$(GIT_SHA) ; \
-	done
+	@docker build --platform linux/amd64 --build-arg SRC_PATH=$(GIT_REPO) -t $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME) .
+	@docker tag $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):latest $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):$(GIT_SHA)
+	@docker build --platform linux/amd64 -t $(DOCKER_BASE_PATH)/utils/otel . -f metrics.dockerfile
 
 push:
-	@for service in $(SERVICES) ; do \
-		docker push $(DOCKER_REPO)/$$service:latest && \
-		docker push $(DOCKER_REPO)/$$service:$(GIT_SHA) ; \
-	done
+	@docker push $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):latest
+	@docker push $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):$(GIT_SHA)
+	@docker push $(DOCKER_BASE_PATH)/utils/otel:latest
 
 deploy:
+	@envsubst < service.yaml.tmpl > service.yaml
+	@gcloud run services replace service.yaml --project=$(GCP_PROEJCT_ID) --region=$(GCP_REGION) --quiet
+
+
+deploy-without-sidecar:
 	@gcloud run deploy $(SERVICE_NAME) \
-		--image $(DOCKER_REPO)/$(SERVICE_NAME):$(GIT_SHA) \
-		--platform managed \
-		--region $(GCP_REGION) \
-		--allow-unauthenticated \
-		--project $(GCP_PROJECT_ID) \
-		--set-env-vars GIT_SHA=$(GIT_SHA) \
-		--concurrency 20 \
-		--cpu 1 \
-		--memory 128Mi
+    		--image $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):$(GIT_SHA) \
+    		--platform managed \
+    		--region $(GCP_REGION) \
+    		--no-allow-unauthenticated \
+    		--project $(GCP_PROJECT_ID) \
+    		--set-env-vars GIT_SHA=$(GIT_SHA),GCP_PROJECT_ID=$(GCP_PROJECT_ID),GCP_REGION=$(GCP_REGION),GCP_BUCKET_NAME=$(GCP_PROJECT_ID)-documents,LOCAL=true \
+    		--concurrency 20 \
+    		--cpu 1 \
+    		--memory 128Mi
+
+infrastructure-plan:
+	@cd .infrastructure && \
+	terraform init && \
+	terraform plan -out=plan.tfplan
+
+infrastructure-apply:
+	@cd .infrastructure && \
+	terraform init && \
+	terraform apply plan.tfplan

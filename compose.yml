@@ -6,72 +6,24 @@ services:
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
     depends_on:
-      - user-api
-      - document-api
+      - portal-api
     links:
-      - user-api
-      - document-api
+      - portal-api
 
-  user-api:
+  portal-api:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         SRC_PATH: thoughtgears/shared-services
-        SERVICE: user-api
     environment:
-      K_SERVICE: user-api
-      GOOGLE_PROJECT: ${GCP_PROJECT_ID}
-      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
-      GCP_REGION: ${GCP_REGION}
-      PORT: 8081
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/application_default_credentials.json
-      OTEL_ENDPOINT: otel-collector:4317
-    volumes:
-      - ~/.config/gcloud:/root/.config/gcloud
-    depends_on:
-      - otel-collector
-    links:
-      - otel-collector
-
-  document-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SRC_PATH: thoughtgears/shared-services
-        SERVICE: document-api
-    environment:
-      K_SERVICE: document-api
+      K_SERVICE: portal-api
       GOOGLE_PROJECT: ${GCP_PROJECT_ID}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID}
       GCP_REGION: ${GCP_REGION}
       GCP_BUCKET_NAME: ${GCP_BUCKET_NAME}
       PORT: 8081
       GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/application_default_credentials.json
-      OTEL_ENDPOINT: otel-collector:4317
     volumes:
       - ~/.config/gcloud:/root/.config/gcloud
-    depends_on:
-      - otel-collector
-    links:
-      - otel-collector
 
-  otel-collector:
-    build:
-      context: .
-      dockerfile: metrics.dockerfile
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/service-account.json
-      K_SERVICE: user-api
-    volumes:
-      - ./data:/root/.config/gcloud
-    ports:
-      - "13133:13133"
-      - "4317:4317" # GRPC endpoint
-      - "4318:4318" # HTTP endpoint
-
-networks:
-  default:
-    name: shared-services-network
-    driver: bridge

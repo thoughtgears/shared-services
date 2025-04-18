@@ -3,7 +3,19 @@
 .DS_Store
 .env
 data/
+service.yaml
 
 # Portal files
 **/node_modules
 **/dist
+
+# Terraform
+
+**/.terraform
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfvars
+**/.terraformrc
+**/.terraform.lock.hcl
+.infrastructure/images.json
+**/*.tfplan

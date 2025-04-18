@@ -8,47 +8,47 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"github.com/thoughtgears/shared-services/apps/document-api/services"
-	"github.com/thoughtgears/shared-services/pkg/models"
+	"github.com/thoughtgears/shared-services/internal/models"
+	"github.com/thoughtgears/shared-services/internal/services"
 )
 
-// Handler is a struct that contains services for handling document-related operations.
+// DocumentHandler is a struct that contains services for handling document-related operations.
 // It provides a unified interface for handling document operations in the system.
-type Handler struct {
+type DocumentHandler struct {
 	service services.DocumentService
 }
 
-// NewHandler creates a new instance of Handler.
+// NewDocumentHandler creates a new instance of DocumentHandler.
 // It initializes the handler with the provided services.
 // This function is used to set up the handler with the necessary services for document management.
 // It is typically called during the initialization phase of the application.
-func NewHandler(service services.DocumentService) *Handler {
-	return &Handler{
+func NewDocumentHandler(service services.DocumentService) *DocumentHandler {
+	return &DocumentHandler{
 		service: service,
 	}
 }
 
 // RegisterRoutes registers the routes for user-related operations.
 // It sets up the API endpoints for updating, retrieving user by ID for the frontend.
-func (h *Handler) RegisterRoutes(router *gin.Engine) {
+func (d *DocumentHandler) RegisterRoutes(router *gin.Engine) {
 	// Talent routes
 	documents := router.Group("/v1/documents")
 	{
-		documents.GET("", h.GetAllByUserID) // Get all documents by user ID
-		documents.GET("/:id", h.GetByID)    // Get document by ID
-		documents.POST("", h.Create)
-		documents.PUT("/:id", h.Update)
-		documents.DELETE("/:id", h.Delete)
+		documents.GET("", d.GetAllByUserID) // Get all documents by user ID
+		documents.GET("/:id", d.GetByID)    // Get document by ID
+		documents.POST("", d.Create)
+		documents.PUT("/:id", d.Update)
+		documents.DELETE("/:id", d.Delete)
 	}
 }
 
 // GetByID handles the GET request to retrieve a document by its unique ID.
 // It returns the document object if found, or an error if not.
 // This method is used to fetch document details.
-func (h *Handler) GetByID(c *gin.Context) {
+func (d *DocumentHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
-	document, err := h.service.GetByID(c, id)
+	document, err := d.service.GetByID(c, id)
 	if err != nil {
 		log.Info().Err(err).Msg("Failed to get document by ID")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -69,10 +69,10 @@ func (h *Handler) GetByID(c *gin.Context) {
 // GetAllByUserID handles the GET request to retrieve all documents associated with a specific user ID.
 // It returns a slice of document objects and an error if any occurs.
 // This method is used to fetch all documents for a user.
-func (h *Handler) GetAllByUserID(c *gin.Context) {
+func (d *DocumentHandler) GetAllByUserID(c *gin.Context) {
 	userID := c.Query("user_id")
 
-	documents, err := h.service.GetAllByUserID(c, userID)
+	documents, err := d.service.GetAllByUserID(c, userID)
 	if err != nil {
 		log.Info().Err(err).Msg("Failed to get documents by user ID")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -93,7 +93,7 @@ func (h *Handler) GetAllByUserID(c *gin.Context) {
 // Create handles the POST request to create a new document.
 // It returns the created document object and an error if any occurs.
 // This method is used to upload a new document to the system.
-func (h *Handler) Create(c *gin.Context) {
+func (d *DocumentHandler) Create(c *gin.Context) {
 	userID := c.PostForm("user_id")
 	if userID == "" {
 		log.Error().Err(errors.New("user_id is required")).Msg("form field user_id is empty")
@@ -156,7 +156,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	newDocument, err := h.service.Create(c, userID, documentType, content)
+	newDocument, err := d.service.Create(c, userID, documentType, content)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create document")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -178,7 +178,7 @@ func (h *Handler) Create(c *gin.Context) {
 // Update handles the PUT request to update an existing document.
 // It returns the updated document object and an error if any occurs.
 // This method is used to modify an existing document in the system.
-func (h *Handler) Update(c *gin.Context) {
+func (d *DocumentHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
 	file, err := c.FormFile("file")
@@ -218,7 +218,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	document, err := h.service.Update(c, id, content)
+	document, err := d.service.Update(c, id, content)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to update document")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -239,10 +239,10 @@ func (h *Handler) Update(c *gin.Context) {
 // Delete handles the DELETE request to remove a document by its unique ID.
 // It returns a success message and an error if any occurs.
 // This method is used to delete a document from the system.
-func (h *Handler) Delete(c *gin.Context) {
+func (d *DocumentHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
-	err := h.service.Delete(c, id)
+	err := d.service.Delete(c, id)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to delete document")
 		c.JSON(http.StatusInternalServerError, gin.H{

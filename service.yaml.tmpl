@@ -1,0 +1,46 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: portal-api
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/container-dependencies: "{portal-api: [otel]}"
+    spec:
+      serviceAccountName: run-portal-api@${GCP_PROJECT_ID}.iam.gserviceaccount.com
+      containers:
+      - image: ${DOCKER_BASE_PATH}/utils/otel:latest
+        name: otel
+        ports:
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 256Mi
+        startupProbe:
+          httpGet:
+            path: /
+            port: 13313
+        
+      - image: ${DOCKER_BASE_PATH}/apis/portal-api:latest
+        name: portal-api
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 128Mi
+        env:
+        - name: GCP_BUCKET_NAME
+          value: ${DOCKER_BASE_PATH}-documents
+        - name: GCP_PROJECT_ID
+          value: ${GCP_PROJECT_ID}
+        - name: GCP_REGION
+          value: ${GCP_REGION}
+        - name: DOMAIN_NAME
+          value: thoughtgears.dev
+        - name: OTEL_ENDPOINT
+          value: localhost:4317

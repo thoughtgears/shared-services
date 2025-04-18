@@ -8,9 +8,9 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
 
-	"github.com/thoughtgears/shared-services/pkg/db"
-	"github.com/thoughtgears/shared-services/pkg/gcs"
-	"github.com/thoughtgears/shared-services/pkg/models"
+	"github.com/thoughtgears/shared-services/internal/db"
+	"github.com/thoughtgears/shared-services/internal/gcs"
+	"github.com/thoughtgears/shared-services/internal/models"
 )
 
 // DocumentService handles operations specific to documents.
@@ -62,7 +62,7 @@ func (d *documentService) GetAllByUserID(ctx context.Context, userID string) ([]
 	query := []db.QueryConstraint{
 		{
 			Path:  "user_id",
-			Op:    "==",
+			Op:    db.QueryOperatorEqual,
 			Value: userID,
 		},
 	}

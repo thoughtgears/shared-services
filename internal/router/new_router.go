@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
-	"github.com/thoughtgears/shared-services/pkg/middleware"
+	"github.com/thoughtgears/shared-services/internal/router/middleware"
 )
 
 type Router struct {
@@ -63,6 +63,7 @@ func NewRouter(serviceName string, local bool, port *string) *Router {
 		// Handle OPTIONS request and return 200
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusOK)
+
 			return
 		}
 

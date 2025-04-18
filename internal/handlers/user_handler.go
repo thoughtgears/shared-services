@@ -5,45 +5,45 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/thoughtgears/shared-services/apps/user-api/services"
-	"github.com/thoughtgears/shared-services/pkg/models"
+	"github.com/thoughtgears/shared-services/internal/models"
+	"github.com/thoughtgears/shared-services/internal/services"
 )
 
-// Handler is a struct that contains services for handling user-related operations.
+// UserHandler is a struct that contains services for handling user-related operations.
 // It provides a unified interface for handling user operations in the system.
-type Handler struct {
+type UserHandler struct {
 	service services.UserService
 }
 
-// NewHandler creates a new instance of Handler.
+// NewUserHandler creates a new instance of UserHandler.
 // It initializes the handler with the provided services.
 // This function is used to set up the handler with the necessary services for user management.
 // It is typically called during the initialization phase of the application.
-func NewHandler(service services.UserService) *Handler {
-	return &Handler{
+func NewUserHandler(service services.UserService) *UserHandler {
+	return &UserHandler{
 		service: service,
 	}
 }
 
 // RegisterRoutes registers the routes for user-related operations.
 // It sets up the API endpoints for updating, retrieving user by ID for the frontend.
-func (h *Handler) RegisterRoutes(router *gin.Engine) {
+func (u *UserHandler) RegisterRoutes(router *gin.Engine) {
 	// Talent routes
 	users := router.Group("/v1/users")
 	{
-		users.GET("/:id", h.GetByID)
-		users.POST("", h.Create)
-		users.PUT("/:id", h.Update)
+		users.GET("/:id", u.GetByID)
+		users.POST("", u.Create)
+		users.PUT("/:id", u.Update)
 	}
 }
 
 // GetByID handles the GET request to retrieve a user by their unique ID.
 // It returns the user object if found, or an error if not.
 // This method is used to fetch user details.
-func (h *Handler) GetByID(c *gin.Context) {
+func (u *UserHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
-	user, err := h.service.GetByID(c, id)
+	user, err := u.service.GetByID(c, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
@@ -63,7 +63,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 // Create handles the POST request to create a new user.
 // It returns the created user object and an error if any occurs.
 // This method is used to register a new user in the system.
-func (h *Handler) Create(c *gin.Context) {
+func (u *UserHandler) Create(c *gin.Context) {
 	var user models.User
 
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -76,7 +76,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	newUser, err := h.service.Create(c, &user)
+	newUser, err := u.service.Create(c, &user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
@@ -97,7 +97,7 @@ func (h *Handler) Create(c *gin.Context) {
 // Update handles the PUT request to modify an existing user's profile.
 // It returns the updated user object and an error if any occurs.
 // This method is used to update a user's profile information.
-func (h *Handler) Update(c *gin.Context) {
+func (u *UserHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
@@ -112,7 +112,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := h.service.Update(c, id, &user)
+	updatedUser, err := u.service.Update(c, id, &user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),

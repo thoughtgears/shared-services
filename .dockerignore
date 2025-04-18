@@ -3,4 +3,13 @@
 .hadolint.yaml
 .terraform-version
 Makefile
-spec
+specs
+.infrastructure
+.idea
+metrics.dockerfile
+Dockerfile
+.dockerignore
+envoy.yaml
+compose.yml
+data
+service.yaml

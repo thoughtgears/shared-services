@@ -1,0 +1,175 @@
+swagger: '2.0'
+info:
+  title: Portal API
+  description: API Gateway routing to User and Document Cloud Run services.
+  version: 1.0.0
+schemes:
+  - https
+produces:
+  - application/json
+consumes:
+  - application/json
+
+securityDefinitions:
+  firebase_auth:
+    type: apiKey
+    name: Authorization
+    in: header
+    x-google-issuer: "https://securetoken.google.com/${project_id}"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+    x-google-audiences: "${project_id}"
+
+paths:
+  /v1/users:
+    post:
+      summary: Create a new user
+      tags:
+        - User API
+      operationId: createUser
+      parameters:
+        - in: body
+          name: userPayload
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_user_url}
+      responses:
+        '201':
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/UserResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/Error'
+
+  /v1/documents:
+    post:
+      summary: Upload a new document
+      tags:
+        - Document API
+      operationId: createDocument
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: user_id
+          in: formData
+          required: true
+          type: string
+        - name: document_type
+          in: formData
+          required: true
+          type: string
+        - name: file
+          in: formData
+          required: true
+          type: file
+      security:
+        - firebase_auth: []
+      x-google-backend:
+        address: ${cloud_run_doc_url}
+        deadline: 60
+      responses:
+        '202':
+          description: Document created successfully
+          schema:
+            $ref: '#/definitions/DocumentResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: string
+      firebase_id:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      email:
+        type: string
+        format: email
+      phone:
+        type: string
+      address:
+        type: object
+        properties:
+          building_number:
+            type: string
+          street:
+            type: string
+          city:
+            type: string
+          postcode:
+            type: string
+          country:
+            type: string
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+
+
+  Document:
+    type: object
+    properties:
+      id:
+        type: string
+      user_id:
+        type: string
+      name:
+        type: string
+      size:
+        type: integer
+      content_type:
+        type: string
+      path:
+        type: string
+      bucket:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+
+  UserResponse:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/User'
+      message:
+        type: string
+      status:
+        type: integer
+
+  DocumentResponse:
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/Document'
+      message:
+        type: string
+      status:
+        type: integer
+
+  Error:
+    type: object
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      status:
+        type: integer

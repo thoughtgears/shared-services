@@ -8,8 +8,9 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
-	"github.com/thoughtgears/shared-services/pkg/db"
-	"github.com/thoughtgears/shared-services/pkg/models"
+
+	"github.com/thoughtgears/shared-services/internal/db"
+	"github.com/thoughtgears/shared-services/internal/models"
 )
 
 // UserService handles operations specific to users.
@@ -51,7 +52,7 @@ func (u *userService) GetByID(ctx context.Context, id string) (*models.User, err
 	query := []db.QueryConstraint{
 		{
 			Path:  "firebase_id",
-			Op:    "==",
+			Op:    db.QueryOperatorEqual,
 			Value: id,
 		},
 	}

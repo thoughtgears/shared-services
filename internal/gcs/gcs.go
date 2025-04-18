@@ -21,18 +21,18 @@ type FileInfo struct {
 	Bucket       string
 }
 
-// GCSStorage is a struct that implements the Storage interface for Google Cloud Storage
+// CloudStorage is a struct that implements the Storage interface for Google Cloud Storage
 // It provides methods for uploading, downloading, deleting files,
 // and listing files in a Google Cloud Storage bucket.
-type GCSStorage struct {
+type CloudStorage struct {
 	client     *storage.Client
 	bucketName string
 }
 
-// NewGCSStorage creates a new GCSStorage instance
+// NewGCSStorage creates a new CloudStorage instance
 // It initializes the GCS client and sets the bucket name and project ID.
-func NewGCSStorage(client *storage.Client, bucketName string) (*GCSStorage, error) {
-	return &GCSStorage{
+func NewGCSStorage(client *storage.Client, bucketName string) (*CloudStorage, error) {
+	return &CloudStorage{
 		client:     client,
 		bucketName: bucketName,
 	}, nil
@@ -44,7 +44,7 @@ func NewGCSStorage(client *storage.Client, bucketName string) (*GCSStorage, erro
 // If the upload is successful, it returns nil.
 // If there is an error, it returns the error.
 // The content type is set to the specified value.
-func (g *GCSStorage) Upload(ctx context.Context, path string, content io.Reader, contentType string) (*FileInfo, error) {
+func (g *CloudStorage) Upload(ctx context.Context, path string, content io.Reader, contentType string) (*FileInfo, error) {
 	bucket := g.client.Bucket(g.bucketName)
 	obj := bucket.Object(path)
 	wc := obj.NewWriter(ctx)
@@ -83,7 +83,7 @@ func (g *GCSStorage) Upload(ctx context.Context, path string, content io.Reader,
 // It creates a new reader for the specified object in the bucket.
 // If the download is successful, it returns the reader.
 // If there is an error, it returns the error.
-func (g *GCSStorage) Download(ctx context.Context, path string) (io.ReadCloser, error) {
+func (g *CloudStorage) Download(ctx context.Context, path string) (io.ReadCloser, error) {
 	bucket := g.client.Bucket(g.bucketName)
 	obj := bucket.Object(path)
 
@@ -100,7 +100,7 @@ func (g *GCSStorage) Download(ctx context.Context, path string) (io.ReadCloser, 
 // It creates a new object in the specified bucket and deletes it.
 // If the deletion is successful, it returns nil.
 // If there is an error, it returns the error.
-func (g *GCSStorage) Delete(ctx context.Context, path string) error {
+func (g *CloudStorage) Delete(ctx context.Context, path string) error {
 	bucket := g.client.Bucket(g.bucketName)
 	obj := bucket.Object(path)
 
@@ -117,7 +117,7 @@ func (g *GCSStorage) Delete(ctx context.Context, path string) error {
 // It iterates through the objects and appends their metadata to a slice of FileInfo.
 // If the listing is successful, it returns the slice of FileInfo.
 // If there is an error, it returns the error.
-func (g *GCSStorage) List(ctx context.Context, prefix string) ([]FileInfo, error) {
+func (g *CloudStorage) List(ctx context.Context, prefix string) ([]FileInfo, error) {
 	bucket := g.client.Bucket(g.bucketName)
 
 	var files []FileInfo

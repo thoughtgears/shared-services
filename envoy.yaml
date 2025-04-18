@@ -27,11 +27,11 @@ static_resources:
                         - match:
                             prefix: "/v1/users"
                           route:
-                            cluster: user_service
+                            cluster: portal_api
                         - match:
                             prefix: "/v1/documents"
                           route:
-                            cluster: document_service
+                            cluster: portal_api
                 http_filters:
                   - name: envoy.filters.http.cors
                     typed_config:
@@ -43,29 +43,16 @@ static_resources:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
-    - name: user_service
+    - name: portal_api
       connect_timeout: 0.25s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: user_service
+        cluster_name: portal_api
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: user-api
-                      port_value: 8081
-    - name: document_service
-      connect_timeout: 0.25s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: document_service
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: document-api
+                      address: portal-api
                       port_value: 8081
