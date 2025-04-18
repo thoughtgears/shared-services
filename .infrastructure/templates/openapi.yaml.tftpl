@@ -99,16 +99,24 @@ paths:
             $ref: '#/definitions/Error'
     options:
       tags:
-        - User API
-      operationId: preflightUser
+        - Document API
+      operationId: preflightDocument
       summary: CORS preflight
       x-google-backend:
         address: ${cloud_run_url}
       responses:
         '200':
           description: CORS headers returned
-        '401':
-          description: Cors not allowed
+          headers:
+            Access-Control-Allow-Origin:
+              type: string
+              description: Allowed origin
+            Access-Control-Allow-Methods:
+              type: string
+              description: Allowed methods
+            Access-Control-Allow-Headers:
+              type: string
+              description: Allowed headers
 
 
   /v1/documents:
@@ -224,12 +232,20 @@ paths:
       operationId: preflightDocument
       summary: CORS preflight
       x-google-backend:
-              address: ${cloud_run_url}
+        address: ${cloud_run_url}
       responses:
         '200':
           description: CORS headers returned
-        '401':
-          description: Cors not allowed
+          headers:
+            Access-Control-Allow-Origin:
+              type: string
+              description: Allowed origin
+            Access-Control-Allow-Methods:
+              type: string
+              description: Allowed methods
+            Access-Control-Allow-Headers:
+              type: string
+              description: Allowed headers
 
 definitions:
   User:
