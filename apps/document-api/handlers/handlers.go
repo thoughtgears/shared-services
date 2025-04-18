@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 
 	"github.com/thoughtgears/shared-services/apps/document-api/services"
 	"github.com/thoughtgears/shared-services/pkg/models"
@@ -48,6 +50,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 
 	document, err := h.service.GetByID(c, id)
 	if err != nil {
+		log.Info().Err(err).Msg("Failed to get document by ID")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to retrieve document",
@@ -71,6 +74,7 @@ func (h *Handler) GetAllByUserID(c *gin.Context) {
 
 	documents, err := h.service.GetAllByUserID(c, userID)
 	if err != nil {
+		log.Info().Err(err).Msg("Failed to get documents by user ID")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to retrieve documents",
@@ -92,6 +96,7 @@ func (h *Handler) GetAllByUserID(c *gin.Context) {
 func (h *Handler) Create(c *gin.Context) {
 	userID := c.PostForm("user_id")
 	if userID == "" {
+		log.Error().Err(errors.New("user_id is required")).Msg("form field user_id is empty")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "user_id is required",
 			"message": "Missing required field: user_id",
@@ -104,6 +109,7 @@ func (h *Handler) Create(c *gin.Context) {
 	documentTypeStr := c.PostForm("document_type")
 	documentType, err := models.ParseDocumentType(documentTypeStr)
 	if err != nil {
+		log.Error().Err(err).Msg("Invalid document type")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   err.Error(),
 			"message": "Invalid document type",
@@ -115,6 +121,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	file, err := c.FormFile("file")
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get file from form")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   err.Error(),
 			"message": "No file was uploaded or invalid file",
@@ -126,6 +133,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	openedFile, err := file.Open()
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to open uploaded file")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to read uploaded file",
@@ -138,6 +146,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	content, err := io.ReadAll(openedFile)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to read file content")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to read file content",
@@ -149,6 +158,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	newDocument, err := h.service.Create(c, userID, documentType, content)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to create document")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to create document",
@@ -173,6 +183,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	file, err := c.FormFile("file")
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get file from form")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   err.Error(),
 			"message": "No file was uploaded or invalid file",
@@ -184,6 +195,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	openedFile, err := file.Open()
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to open uploaded file")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to read uploaded file",
@@ -196,6 +208,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	content, err := io.ReadAll(openedFile)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to read file content")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to read file content",
@@ -207,6 +220,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	document, err := h.service.Update(c, id, content)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to update document")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to update document",
@@ -230,6 +244,7 @@ func (h *Handler) Delete(c *gin.Context) {
 
 	err := h.service.Delete(c, id)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to delete document")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   err.Error(),
 			"message": "Failed to delete document",

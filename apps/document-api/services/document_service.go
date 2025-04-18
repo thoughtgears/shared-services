@@ -95,6 +95,7 @@ func (d *documentService) Create(ctx context.Context, userID string, documentTyp
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload document: %w", err)
 	}
+
 	document := map[string]interface{}{
 		"id":           documentID,
 		"user_id":      userID,

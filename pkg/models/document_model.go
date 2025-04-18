@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type DocumentType string
@@ -23,8 +24,8 @@ type Document struct {
 	ContentType string       `json:"content_type" firestore:"content_type"`
 	Path        string       `json:"path" firestore:"path"`
 	Bucket      string       `json:"bucket" firestore:"bucket"`
-	CreatedAt   string       `json:"created_at" firestore:"created_at,serverTimestamp"`
-	UpdatedAt   string       `json:"updated_at" firestore:"updated_at,serverTimestamp"`
+	CreatedAt   time.Time    `json:"created_at" firestore:"created_at,serverTimestamp"`
+	UpdatedAt   time.Time    `json:"updated_at" firestore:"updated_at,serverTimestamp"`
 }
 
 func ParseDocumentType(docType string) (DocumentType, error) {
