@@ -1,4 +1,9 @@
+# Local development files
 .idea
 .DS_Store
 .env
 data/
+
+# Portal files
+**/node_modules
+**/dist

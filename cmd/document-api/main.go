@@ -30,8 +30,8 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	otel := telemetry.NewTelemetry(cfg.ServiceName, cfg.DomainName, cfg.OtelEndpoint)
-	cleanup := otel.InitTracer()
+	otel := telemetry.NewTelemetry(cfg.ServiceName, cfg.DomainName)
+	cleanup := otel.InitTracer(ctx)
 	defer func() {
 		if err := cleanup(ctx); err != nil {
 			log.Fatal().Msgf("Failed to cleanup OpenTelemetry: %v", err)

@@ -6,10 +6,9 @@ type Otel struct {
 	CollectorURL string
 }
 
-func NewTelemetry(serviceName, domainName, collectorURL string) *Otel {
+func NewTelemetry(serviceName, domainName string) *Otel {
 	return &Otel{
-		ServiceName:  serviceName,
-		DomainName:   domainName,
-		CollectorURL: collectorURL,
+		ServiceName: serviceName,
+		DomainName:  domainName,
 	}
 }

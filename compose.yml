@@ -14,7 +14,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        SRC_PATH: thouthtgears/shared-services
+        SRC_PATH: thoughtgears/shared-services
         SERVICE: user-api
     environment:
       K_SERVICE: user-api
@@ -24,9 +24,15 @@ services:
       PORT: 8081
       GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/application_default_credentials.json
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_INSECURE: "true"
     volumes:
       - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
+      - otel-collector
+    links:
       - otel-collector
 
   document-api:
@@ -34,20 +40,26 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        SRC_PATH: thouthtgears/shared-services
+        SRC_PATH: thoughtgears/shared-services
         SERVICE: document-api
     environment:
       K_SERVICE: document-api
       GOOGLE_PROJECT: ${GCP_PROJECT_ID}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID}
       GCP_REGION: ${GCP_REGION}
-      GCP_BUCKET: ${GCP_BUCKET}
+      GCP_BUCKET_NAME: ${GCP_BUCKET_NAME}
       PORT: 8081
       GOOGLE_APPLICATION_CREDENTIALS: /root/.config/gcloud/application_default_credentials.json
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_INSECURE: "true"
     volumes:
       - ~/.config/gcloud:/root/.config/gcloud
     depends_on:
+      - otel-collector
+    links:
       - otel-collector
 
   otel-collector:
@@ -61,3 +73,15 @@ services:
       - ./data:/root/.config/gcloud
     ports:
       - "13133:13133"
+      - "4317:4317" # GRPC endpoint
+      - "4318:4318" # HTTP endpoint
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:13133" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+networks:
+  default:
+    name: shared-services-network
+    driver: bridge

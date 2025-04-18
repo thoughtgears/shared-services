@@ -5,34 +5,28 @@ import (
 	"log"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
-func (o *Otel) InitTracer() func(context.Context) error {
-	exporter, err := otlptrace.New(
-		context.Background(),
-		otlptracegrpc.NewClient(
-			otlptracegrpc.WithInsecure(),
-			otlptracegrpc.WithEndpoint(o.CollectorURL),
-		),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func (o *Otel) InitTracer(ctx context.Context) func(context.Context) error {
 	resources, err := resource.New(
-		context.Background(),
+		ctx,
 		resource.WithAttributes(
-			attribute.String("service.name", o.ServiceName),
-			attribute.String("library.language", "go"),
+			semconv.ServiceName(o.ServiceName),
+			semconv.OTelScopeName(semconv.TelemetrySDKLanguageGo.Value.AsString()),
+			semconv.OTelScopeVersion("1.24.2"),
 		),
 	)
 	if err != nil {
 		log.Printf("Could not set resources: %v", err)
+	}
+
+	exporter, err := otlptracegrpc.New(ctx)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	otel.SetTracerProvider(
