@@ -204,6 +204,14 @@ resource "google_cloud_run_v2_service_iam_member" "document_api_invoker" {
   member   = "serviceAccount:${local.api_gateway_runtime_sa}"
 }
 
+resource "google_cloud_run_v2_service_iam_member" "monitoring_uptime_check_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.this.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:service-${var.project_number}@gcp-sa-monitoring-notification.iam.gserviceaccount.com"
+}
+
 /**
  * # GCS infrastructure
  *
@@ -244,7 +252,7 @@ resource "google_api_gateway_api_config" "api_config" {
   api                  = google_api_gateway_api.portal_api.api_id
   api_config_id_prefix = "portal-api-config-" # Creates unique IDs like my-gateway-config-a1b2
 
-  display_name = "Config ${timestamp()}" # Example: Config with timestamp
+  display_name = "Config - ${var.git_sha} " # Example: Config with timestamp
 
   openapi_documents {
     document {

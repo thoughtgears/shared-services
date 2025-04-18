@@ -13,3 +13,9 @@ variable "region" {
   description = "GCP Region to deploy the infrastructure"
   default     = "europe-west1"
 }
+
+variable "git_sha" {
+  type        = string
+  description = "Git SHA of the commit to deploy"
+  default     = "latest"
+}

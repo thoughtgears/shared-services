@@ -97,6 +97,14 @@ paths:
           description: Bad request
           schema:
             $ref: '#/definitions/Error'
+    options:
+      tags:
+        - User API
+      operationId: preflightUser
+      summary: CORS preflight
+      responses:
+        '200':
+          description: CORS headers returned
 
   /v1/documents:
     get:
@@ -205,6 +213,14 @@ paths:
           description: Failed to delete document
           schema:
             $ref: '#/definitions/Error'
+    options:
+      tags:
+        - Document API
+      operationId: preflightDocument
+      summary: CORS preflight
+      responses:
+        '200':
+          description: CORS headers returned
 
 definitions:
   User:
