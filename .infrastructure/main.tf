@@ -15,8 +15,9 @@ locals {
 locals {
   api_gateway_runtime_sa = "service-${var.project_number}@gcp-sa-apigateway.iam.gserviceaccount.com"
   openapi_spec_rendered = templatefile("${path.module}/templates/openapi.yaml.tftpl", {
-    project_id    = var.project_id
-    cloud_run_url = google_cloud_run_v2_service.this.uri
+    project_id        = var.project_id
+    cloud_run_url     = google_cloud_run_v2_service.this.uri
+    cors_function_url = var.cors_function_url
   })
 
   openapi_spec_base64 = base64encode(local.openapi_spec_rendered)
@@ -163,6 +164,12 @@ resource "google_storage_bucket_iam_binding" "run_object_admin" {
   bucket  = google_storage_bucket.run_documents.name
   members = ["serviceAccount:${google_service_account.run.email}"]
   role    = "roles/storage.objectAdmin"
+}
+
+resource "google_project_iam_member" "run_trace_writer" {
+  project = var.project_id
+  member  = "serviceAccount:${google_service_account.run.email}"
+  role    = "roles/telemetry.writer"
 }
 
 resource "google_project_iam_member" "run_service_account_user" {

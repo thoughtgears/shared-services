@@ -25,3 +25,8 @@ variable "digest" {
   description = "Docker digest of the image to deploy"
   default     = "latest"
 }
+
+variable "cors_function_url" {
+  type        = string
+  description = "URL of the CORS function that handle cors for the API Gateway"
+}
