@@ -30,3 +30,8 @@ variable "cors_function_url" {
   type        = string
   description = "URL of the CORS function that handle cors for the API Gateway"
 }
+
+variable "run_domain" {
+  type        = string
+  description = "Custom verified domain for the Cloud Run services"
+}

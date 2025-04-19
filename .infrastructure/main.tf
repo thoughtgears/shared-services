@@ -12,17 +12,6 @@ locals {
   ]
 }
 
-locals {
-  api_gateway_runtime_sa = "service-${var.project_number}@gcp-sa-apigateway.iam.gserviceaccount.com"
-  openapi_spec_rendered = templatefile("${path.module}/templates/openapi.yaml.tftpl", {
-    project_id        = var.project_id
-    cloud_run_url     = google_cloud_run_v2_service.this.uri
-    cors_function_url = var.cors_function_url
-  })
-
-  openapi_spec_base64 = base64encode(local.openapi_spec_rendered)
-}
-
 /**
  * # Initial configuration
  *
@@ -149,6 +138,20 @@ resource "google_cloud_run_v2_service" "this" {
   }
 }
 
+resource "google_cloud_run_domain_mapping" "this" {
+  project  = var.project_id
+  location = var.region
+  name     = "api.${var.run_domain}"
+
+  metadata {
+    namespace = var.project_number
+  }
+
+  spec {
+    route_name = google_cloud_run_v2_service.this.name
+  }
+}
+
 /**
  * # IAM roles for service accounts
  *
@@ -158,6 +161,12 @@ resource "google_project_iam_binding" "run_firebase_access" {
   project = var.project_id
   members = ["serviceAccount:${google_service_account.run.email}"]
   role    = google_project_iam_custom_role.thoughtgears_firebase_service_access.name
+}
+
+resource "google_project_iam_binding" "run_firebase_admin" {
+  project = var.project_id
+  members = ["serviceAccount:${google_service_account.run.email}"]
+  role    = "roles/firebase.admin"
 }
 
 resource "google_storage_bucket_iam_binding" "run_object_admin" {
@@ -170,6 +179,12 @@ resource "google_project_iam_member" "run_trace_writer" {
   project = var.project_id
   member  = "serviceAccount:${google_service_account.run.email}"
   role    = "roles/telemetry.writer"
+}
+
+resource "google_project_iam_member" "run_trace_agent" {
+  project = var.project_id
+  member  = "serviceAccount:${google_service_account.run.email}"
+  role    = "roles/cloudtrace.agent"
 }
 
 resource "google_project_iam_member" "run_service_account_user" {
@@ -196,22 +211,6 @@ resource "google_project_iam_member" "run_artifact_registry_reader" {
   role    = "roles/artifactregistry.reader"
 }
 
-resource "google_cloud_run_v2_service_iam_member" "user_api_invoker" {
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.this.name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:${local.api_gateway_runtime_sa}"
-}
-
-# Grant API Gateway permission to invoke the Document API Cloud Run service
-resource "google_cloud_run_v2_service_iam_member" "document_api_invoker" {
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.this.name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:${local.api_gateway_runtime_sa}"
-}
 
 resource "google_cloud_run_v2_service_iam_member" "monitoring_uptime_check_invoker" {
   project  = var.project_id
@@ -220,6 +219,15 @@ resource "google_cloud_run_v2_service_iam_member" "monitoring_uptime_check_invok
   role     = "roles/run.invoker"
   member   = "serviceAccount:service-${var.project_number}@gcp-sa-monitoring-notification.iam.gserviceaccount.com"
 }
+
+resource "google_cloud_run_v2_service_iam_member" "run_allow_all_users" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.this.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
 
 /**
  * # GCS infrastructure
@@ -233,66 +241,6 @@ resource "google_storage_bucket" "run_documents" {
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
   force_destroy               = false
-}
-
-/**
- * # API Gateway for the run instances
- *
- * This section sets up the API Gateway for the cloud run instances.
- * It creates a global gateway and instance.
- * It also creates a unified gateway configuration for the services.
- */
-resource "google_api_gateway_api" "portal_api" {
-  provider     = google-beta
-  project      = var.project_id
-  api_id       = "portal-api"
-  display_name = "Portal API"
-
-  depends_on = [
-    google_project_service.this["apigateway.googleapis.com"],
-    google_project_service.this["servicemanagement.googleapis.com"],
-    google_project_service.this["servicecontrol.googleapis.com"],
-  ]
-}
-
-resource "google_api_gateway_api_config" "api_config" {
-  provider             = google-beta
-  project              = var.project_id
-  api                  = google_api_gateway_api.portal_api.api_id
-  api_config_id_prefix = "portal-api-config-" # Creates unique IDs like my-gateway-config-a1b2
-
-  openapi_documents {
-    document {
-      path     = "openapi_spec.yaml" # Arbitrary filename for the spec within the config
-      contents = local.openapi_spec_base64
-    }
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [
-    google_project_service.this["apigateway.googleapis.com"],
-    google_project_service.this["servicemanagement.googleapis.com"],
-    google_project_service.this["servicecontrol.googleapis.com"],
-    google_cloud_run_v2_service.this,
-    google_cloud_run_v2_service.this,
-  ]
-}
-
-resource "google_api_gateway_gateway" "gateway" {
-  provider   = google-beta
-  project    = var.project_id
-  region     = var.region
-  gateway_id = local.service_name
-
-  api_config   = google_api_gateway_api_config.api_config.id
-  display_name = "${title(local.service_name)} Gateway Instance"
-
-  depends_on = [
-    google_api_gateway_api_config.api_config
-  ]
 }
 
 /**

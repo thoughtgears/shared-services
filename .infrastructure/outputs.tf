@@ -8,12 +8,7 @@ output "document_bucket" {
   description = "The name of the document bucket."
 }
 
-output "api_gateway_url" {
-  description = "Default hostname URL of the deployed API Gateway"
-  value       = "https://${google_api_gateway_gateway.gateway.default_hostname}"
-}
-
-output "api_config_name" {
-  description = "Name of the deployed API Config"
-  value       = google_api_gateway_api_config.api_config.name
+output "domain_mapping_records" {
+  value       = try(google_cloud_run_domain_mapping.this.status[0].resource_records, [])
+  description = "The domain mapping records for the Cloud Run service."
 }

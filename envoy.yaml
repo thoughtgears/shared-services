@@ -32,6 +32,10 @@ static_resources:
                             prefix: "/v1/documents"
                           route:
                             cluster: portal_api
+                        - match:
+                            prefix: "/health"
+                          route:
+                            cluster: portal_api
                 http_filters:
                   - name: envoy.filters.http.cors
                     typed_config:

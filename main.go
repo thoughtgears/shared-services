@@ -15,6 +15,7 @@ import (
 	"github.com/thoughtgears/shared-services/internal/handlers"
 	"github.com/thoughtgears/shared-services/internal/models"
 	"github.com/thoughtgears/shared-services/internal/router"
+	"github.com/thoughtgears/shared-services/internal/router/middleware"
 	"github.com/thoughtgears/shared-services/internal/services"
 	"github.com/thoughtgears/shared-services/internal/telemetry"
 )
@@ -34,6 +35,10 @@ func init() {
 
 func main() {
 	ctx := context.Background()
+
+	if err := middleware.InitFirebase(ctx, cfg.ProjectID); err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize Firebase")
+	}
 
 	// Only run OpenTelemetry if not in local mode
 	if !cfg.Local {

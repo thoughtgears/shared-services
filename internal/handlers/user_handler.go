@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/thoughtgears/shared-services/internal/models"
+	"github.com/thoughtgears/shared-services/internal/router/middleware"
 	"github.com/thoughtgears/shared-services/internal/services"
 )
 
@@ -30,6 +31,7 @@ func NewUserHandler(service services.UserService) *UserHandler {
 func (u *UserHandler) RegisterRoutes(router *gin.Engine) {
 	// Talent routes
 	users := router.Group("/v1/users")
+	users.Use(middleware.FirebaseAuth())
 	{
 		users.GET("/:id", u.GetByID)
 		users.POST("", u.Create)

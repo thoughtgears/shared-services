@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/thoughtgears/shared-services/internal/models"
+	"github.com/thoughtgears/shared-services/internal/router/middleware"
 	"github.com/thoughtgears/shared-services/internal/services"
 )
 
@@ -33,6 +34,7 @@ func NewDocumentHandler(service services.DocumentService) *DocumentHandler {
 func (d *DocumentHandler) RegisterRoutes(router *gin.Engine) {
 	// Talent routes
 	documents := router.Group("/v1/documents")
+	documents.Use(middleware.FirebaseAuth())
 	{
 		documents.GET("", d.GetAllByUserID) // Get all documents by user ID
 		documents.GET("/:id", d.GetByID)    // Get document by ID

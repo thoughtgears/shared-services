@@ -2,7 +2,9 @@ package router
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
@@ -54,21 +56,25 @@ func NewRouter(serviceName string, local bool, port *string) *Router {
 	newRouter.Engine.Use(gin.Recovery())
 	newRouter.Engine.Use(otelgin.Middleware(serviceName))
 
-	newRouter.Engine.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "authorization,content-type,x-requested-with,origin,accept")
-		c.Header("Access-Control-Max-Age", "86400")
-
-		// Handle OPTIONS request and return 200
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusOK)
-
-			return
-		}
-
-		c.Next()
-	})
+	newRouter.Engine.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"https://www.thoughtgears.dev", "https://thoughtgears.dev", "http://localhost:5002"},
+		AllowMethods: []string{"PUT", "GET", "POST", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Type",
+			"Content-Length",
+			"Accept-Encoding",
+			"Authorization",
+			"Accept",
+			"Cache-Control",
+			"X-Requested-With",
+		},
+		ExposeHeaders: []string{
+			"Content-Type",
+			"Content-Length",
+		},
+		MaxAge: 12 * time.Hour,
+	}))
 
 	// Explicitly clear trusted proxies (important for security depending on deployment)
 	// If behind a trusted proxy (like Cloudflare), you might configure this differently.

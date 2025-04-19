@@ -10,7 +10,7 @@ GIT_REPO := $(shell git remote get-url origin 2>/dev/null | sed 's/.*[/:]//;s/\.
 
 dev:
 	@go mod tidy
-	@go run main.go
+	@air
 
 lint:
 	@golangci-lint run --timeout 5m
@@ -25,14 +25,14 @@ build: lint
 	@docker tag $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):latest $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):$(GIT_SHA)
 	@docker build --platform linux/amd64 -t $(DOCKER_BASE_PATH)/utils/otel . -f metrics.dockerfile
 
-	@DIGEST=$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):latest | awk -F'@' '{print $$2}'); \
-    @sed -i '' "s|digest *= *\".*\"|digest = \"$$DIGEST\"|" .infrastructure/variables.auto.tfvars
-	@terraform fmt ./.infrastructure/variables.auto.tfvars
-
 push:
 	@docker push $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):latest
 	@docker push $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):$(GIT_SHA)
 	@docker push $(DOCKER_BASE_PATH)/utils/otel:latest
+
+	@DIGEST=$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_BASE_PATH)/apis/$(SERVICE_NAME):latest | awk -F'@' '{print $$2}'); \
+		sed -i '' "s|digest *= *\".*\"|digest = \"$$DIGEST\"|" .infrastructure/variables.auto.tfvars; \
+		terraform fmt ./.infrastructure/variables.auto.tfvars
 
 deploy:
 	@envsubst < service.yaml.tmpl > service.yaml
