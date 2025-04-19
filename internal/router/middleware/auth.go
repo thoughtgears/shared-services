@@ -17,9 +17,9 @@ import (
 var firebaseApp *firebase.App
 
 // InitFirebase initializes the Firebase app on server startup
-func InitFirebase(ctx context.Context) error {
+func InitFirebase(ctx context.Context, secretPath string) error {
 	var err error
-	opt := option.WithCredentialsFile("./secrets/firebase-service-account.json")
+	opt := option.WithCredentialsFile(secretPath)
 	firebaseApp, err = firebase.NewApp(ctx, nil, opt)
 	if err != nil {
 		return fmt.Errorf("failed to initialize Firebase app: %w", err)

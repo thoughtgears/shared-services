@@ -36,7 +36,7 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	if err := middleware.InitFirebase(ctx); err != nil {
+	if err := middleware.InitFirebase(ctx, cfg.FirebaseSecretPath); err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize Firebase")
 	}
 
