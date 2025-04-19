@@ -21,54 +21,27 @@ securityDefinitions:
     x-google-audiences: ${project_id}
 
 paths:
-  /**:
+  /v1/users:
     options:
-      summary: Handle all CORS preflight requests
-      operationId: handlePreflight
+      summary: CORS Preflight Check for User endpoint
+      operationId: optionsUser
+      tags:
+        - User API
       x-google-backend:
-        address: ${cloud_run_url}
+        address: ${cloud_run_user_url}
         path_translation: APPEND_PATH_TO_ADDRESS
       responses:
-        '200':
-          description: CORS headers returned
+        '204':
+          description: CORS Preflight Allowed
           headers:
             Access-Control-Allow-Origin:
               type: string
-              description: Allowed origin
             Access-Control-Allow-Methods:
               type: string
-              description: Allowed methods
             Access-Control-Allow-Headers:
               type: string
-              description: Allowed headers
-        '401':
-          description: Cors preflight request failed
-
-  /v1/users:
-    get:
-      summary: Retrieve a user by ID
-      tags:
-        - User API
-      operationId: getUserById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: string
-      security:
-        - firebase_auth: []
-      x-google-backend:
-        address: ${cloud_run_url}
-        path_translation: APPEND_PATH_TO_ADDRESS
-      responses:
-        '200':
-          description: User retrieved successfully
-          schema:
-            $ref: '#/definitions/UserResponse'
-        '500':
-          description: Failed to retrieve user
-          schema:
-            $ref: '#/definitions/Error'
+            Access-Control-Max-Age:
+              type: string
     post:
       summary: Create a new user
       tags:
@@ -94,37 +67,28 @@ paths:
           description: Bad request
           schema:
             $ref: '#/definitions/Error'
-    put:
-      summary: Update an existing user
-      tags:
-        - User API
-      operationId: updateUser
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: string
-        - in: body
-          name: userPayload
-          required: true
-          schema:
-            $ref: '#/definitions/User'
-      security:
-        - firebase_auth: []
-      x-google-backend:
-        address: ${cloud_run_url}
-        path_translation: APPEND_PATH_TO_ADDRESS
-      responses:
-        '200':
-          description: User updated successfully
-          schema:
-            $ref: '#/definitions/UserResponse'
-        '400':
-          description: Bad request
-          schema:
-            $ref: '#/definitions/Error'
 
   /v1/users/{id}:
+      options:
+        summary: CORS Preflight Check for User ID endpoint
+        operationId: optionsUserByID
+        tags:
+          - User API
+        x-google-backend:
+          address: ${cloud_run_user_url}
+          path_translation: APPEND_PATH_TO_ADDRESS
+        responses:
+          '204':
+            description: CORS Preflight Allowed
+            headers:
+              Access-Control-Allow-Origin:
+                type: string
+              Access-Control-Allow-Methods:
+                type: string
+              Access-Control-Allow-Headers:
+                type: string
+              Access-Control-Max-Age:
+                type: string
       get:
         summary: Retrieve a user by ID
         tags:
@@ -180,6 +144,26 @@ paths:
               $ref: '#/definitions/Error'
 
   /v1/documents:
+    options:
+      summary: CORS Preflight Check for Document endpoint
+      operationId: optionsDocument
+      tags:
+        - Document API
+      x-google-backend:
+        address: ${cloud_run_user_url}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      responses:
+        '204':
+          description: CORS Preflight Allowed
+          headers:
+            Access-Control-Allow-Origin:
+              type: string
+            Access-Control-Allow-Methods:
+              type: string
+            Access-Control-Allow-Headers:
+              type: string
+            Access-Control-Max-Age:
+              type: string
     get:
       summary: Retrieve all documents by user ID
       tags:
@@ -243,6 +227,26 @@ paths:
 
 
   /v1/documents/{id}:
+    options:
+      summary: CORS Preflight Check for Document ID endpoint
+      operationId: optionsDocumentByID
+      tags:
+        - Document API
+      x-google-backend:
+        address: ${cloud_run_user_url}
+        path_translation: APPEND_PATH_TO_ADDRESS
+      responses:
+        '204':
+          description: CORS Preflight Allowed
+          headers:
+            Access-Control-Allow-Origin:
+              type: string
+            Access-Control-Allow-Methods:
+              type: string
+            Access-Control-Allow-Headers:
+              type: string
+            Access-Control-Max-Age:
+              type: string
     get:
       summary: Retrieve a document by ID
       tags:
