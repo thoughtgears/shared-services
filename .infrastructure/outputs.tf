@@ -7,8 +7,3 @@ output "document_bucket" {
   value       = google_storage_bucket.run_documents.name
   description = "The name of the document bucket."
 }
-
-output "domain_mapping_records" {
-  value       = try(google_cloud_run_domain_mapping.this.status[0].resource_records, [])
-  description = "The domain mapping records for the Cloud Run service."
-}

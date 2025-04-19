@@ -23,7 +23,6 @@ variable "git_sha" {
 variable "digest" {
   type        = string
   description = "Docker digest of the image to deploy"
-  default     = "latest"
 }
 
 variable "cors_function_url" {

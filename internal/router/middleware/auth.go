@@ -10,19 +10,22 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/api/option"
 )
 
 // Global Firebase app instance to avoid recreating it for each request
 var firebaseApp *firebase.App
 
 // InitFirebase initializes the Firebase app on server startup
-func InitFirebase(ctx context.Context, projectID string) error {
+func InitFirebase(ctx context.Context) error {
 	var err error
-	firebaseApp, err = firebase.NewApp(ctx, &firebase.Config{
-		ProjectID: projectID,
-	})
+	opt := option.WithCredentialsFile("./secrets/firebase-service-account.json")
+	firebaseApp, err = firebase.NewApp(ctx, nil, opt)
+	if err != nil {
+		return fmt.Errorf("failed to initialize Firebase app: %w", err)
+	}
 
-	return fmt.Errorf("failed to initialize Firebase app: %w", err)
+	return nil
 }
 
 // FirebaseAuth is middleware that validates Firebase auth tokens

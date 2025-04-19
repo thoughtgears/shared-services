@@ -14,3 +14,5 @@ compose.yml
 data
 service.yaml
 tmp
+*service-account.json
+secrets

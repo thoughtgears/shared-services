@@ -1,7 +1,7 @@
 locals {
   service_name            = "portal-api"
   otel_docker_image       = "${var.region}-docker.pkg.dev/${var.project_id}/utils/otel:latest"
-  portal_api_docker_image = var.digest == "latest" ? "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}:latest" : "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}@${var.digest}"
+  portal_api_docker_image = "${var.region}-docker.pkg.dev/${var.project_id}/apis/${local.service_name}@${var.digest}"
 
   service_apis = [
     "apigateway.googleapis.com",
@@ -57,6 +57,22 @@ resource "google_service_account" "run" {
   description  = "Service account for cloud run instance for ${local.service_name}"
 }
 
+resource "google_secret_manager_secret" "firebase_json_key" {
+  project   = var.project_id
+  secret_id = "firebase-json-key"
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "firebase_json_key" {
+  secret = google_secret_manager_secret.firebase_json_key.id
+
+  is_secret_data_base64 = true
+  secret_data           = filebase64("../secrets/firebase-service-account.json")
+}
+
 resource "google_cloud_run_v2_service" "this" {
   name                = local.service_name
   project             = var.project_id
@@ -69,6 +85,18 @@ resource "google_cloud_run_v2_service" "this" {
     timeout                          = "60s"
     max_instance_request_concurrency = 500
 
+    volumes {
+      name = "secret-volume"
+      secret {
+        secret       = google_secret_manager_secret.firebase_json_key.secret_id
+        default_mode = 292 # 0444
+        items {
+          version = "latest"
+          path    = "firebase-service-account.json"
+        }
+      }
+    }
+
     scaling {
       min_instance_count = 0
       max_instance_count = 1
@@ -77,13 +105,18 @@ resource "google_cloud_run_v2_service" "this" {
     containers {
       image = local.portal_api_docker_image
 
+      volume_mounts {
+        name       = "secret-volume"
+        mount_path = "/secrets"
+      }
+
       ports {
         container_port = 8080
       }
 
       resources {
         limits = {
-          cpu    = "1"
+          cpu    = "1000m"
           memory = "512Mi"
         }
       }
@@ -130,25 +163,11 @@ resource "google_cloud_run_v2_service" "this" {
 
       resources {
         limits = {
-          cpu    = "1"
+          cpu    = "1000m"
           memory = "512Mi"
         }
       }
     }
-  }
-}
-
-resource "google_cloud_run_domain_mapping" "this" {
-  project  = var.project_id
-  location = var.region
-  name     = "api.${var.run_domain}"
-
-  metadata {
-    namespace = var.project_number
-  }
-
-  spec {
-    route_name = google_cloud_run_v2_service.this.name
   }
 }
 
@@ -163,16 +182,23 @@ resource "google_project_iam_binding" "run_firebase_access" {
   role    = google_project_iam_custom_role.thoughtgears_firebase_service_access.name
 }
 
-resource "google_project_iam_binding" "run_firebase_admin" {
-  project = var.project_id
-  members = ["serviceAccount:${google_service_account.run.email}"]
-  role    = "roles/firebase.admin"
-}
-
 resource "google_storage_bucket_iam_binding" "run_object_admin" {
   bucket  = google_storage_bucket.run_documents.name
   members = ["serviceAccount:${google_service_account.run.email}"]
   role    = "roles/storage.objectAdmin"
+}
+
+resource "google_secret_manager_secret_iam_binding" "run_firebase_json_key" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.firebase_json_key.secret_id
+  members   = ["serviceAccount:${google_service_account.run.email}"]
+  role      = "roles/secretmanager.secretAccessor"
+}
+
+resource "google_project_iam_member" "run_firebase_admin" {
+  project = var.project_id
+  member  = "serviceAccount:${google_service_account.run.email}"
+  role    = "roles/firebase.admin"
 }
 
 resource "google_project_iam_member" "run_trace_writer" {
